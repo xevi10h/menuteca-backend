@@ -1,23 +1,27 @@
-import { Router } from 'express';
-import { AuthController } from '@/controllers/authController';
+import { Router, IRouter } from 'express';
+import {
+	register,
+	login,
+	googleAuth,
+	getProfile,
+	refreshToken,
+	changePassword,
+	setPassword,
+} from '@/controllers/authController';
 import { authenticateToken } from '@/middleware/auth';
 import { authRateLimit } from '@/middleware/rateLimit';
 
-const router = Router();
+const router: IRouter = Router();
 
 // Public routes
-router.post('/register', authRateLimit, AuthController.register);
-router.post('/login', authRateLimit, AuthController.login);
-router.post('/google', authRateLimit, AuthController.googleAuth);
+router.post('/register', authRateLimit, register);
+router.post('/login', authRateLimit, login);
+router.post('/google', authRateLimit, googleAuth);
 
 // Protected routes
-router.get('/profile', authenticateToken, AuthController.getProfile);
-router.post('/refresh', authenticateToken, AuthController.refreshToken);
-router.post(
-	'/change-password',
-	authenticateToken,
-	AuthController.changePassword,
-);
-router.post('/set-password', authenticateToken, AuthController.setPassword);
+router.get('/profile', authenticateToken, getProfile);
+router.post('/refresh', authenticateToken, refreshToken);
+router.post('/change-password', authenticateToken, changePassword);
+router.post('/set-password', authenticateToken, setPassword);
 
 export default router;

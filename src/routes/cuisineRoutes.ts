@@ -1,18 +1,26 @@
-import { Router } from 'express';
-import { CuisineController } from '@/controllers/cuisineController';
+import { Router, IRouter } from 'express';
+import {
+	getAllCuisines,
+	getCuisineById,
+	createCuisine,
+	updateCuisine,
+	deleteCuisine,
+	searchCuisines,
+	getCuisineStats,
+} from '@/controllers/cuisineController';
 import { authenticateToken, optionalAuth } from '@/middleware/auth';
 
-const router = Router();
+const router: IRouter = Router();
 
 // Public routes
-router.get('/', optionalAuth, CuisineController.getAllCuisines);
-router.get('/search', optionalAuth, CuisineController.searchCuisines);
-router.get('/stats', CuisineController.getCuisineStats);
-router.get('/:id', optionalAuth, CuisineController.getCuisineById);
+router.get('/', optionalAuth, getAllCuisines);
+router.get('/search', optionalAuth, searchCuisines);
+router.get('/stats', getCuisineStats);
+router.get('/:id', optionalAuth, getCuisineById);
 
 // Admin routes (would need admin middleware)
-router.post('/', authenticateToken, CuisineController.createCuisine);
-router.put('/:id', authenticateToken, CuisineController.updateCuisine);
-router.delete('/:id', authenticateToken, CuisineController.deleteCuisine);
+router.post('/', authenticateToken, createCuisine);
+router.put('/:id', authenticateToken, updateCuisine);
+router.delete('/:id', authenticateToken, deleteCuisine);
 
 export default router;

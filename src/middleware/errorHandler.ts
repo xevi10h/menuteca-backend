@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response, NextFunction, RequestHandler } from 'express';
 import { ApiResponse } from '@/types/common';
 
 export class AppError extends Error {
@@ -89,10 +89,10 @@ export const notFound = (
 /**
  * Async error wrapper to catch async errors in route handlers
  */
-export const asyncHandler = <T extends Request = Request>(
-	fn: (req: T, res: Response, next: NextFunction) => Promise<any>,
-) => {
-	return (req: T, res: Response, next: NextFunction): void => {
+export const asyncHandler = (
+	fn: (req: Request, res: Response, next: NextFunction) => Promise<any>,
+): RequestHandler => {
+	return (req: Request, res: Response, next: NextFunction): void => {
 		Promise.resolve(fn(req, res, next)).catch(next);
 	};
 };

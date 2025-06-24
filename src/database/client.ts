@@ -3,8 +3,9 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabaseUrl = 'https://xuoyhbavkonivkplomjy.supabase.co';
+const supabaseServiceKey =
+	'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh1b3loYmF2a29uaXZrcGxvbWp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA3ODAwNzYsImV4cCI6MjA2NjM1NjA3Nn0.mTfASXJcJ-ekqBRb8gvQul4i97KrrTil6U98AEvMwRc';
 
 if (!supabaseUrl || !supabaseServiceKey) {
 	throw new Error('Missing Supabase environment variables');

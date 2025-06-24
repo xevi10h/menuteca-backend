@@ -33,7 +33,9 @@
 		},
 		"allowSyntheticDefaultImports": true,
 		"experimentalDecorators": true,
-		"emitDecoratorMetadata": true
+		"emitDecoratorMetadata": true,
+		"typeRoots": ["./node_modules/@types"],
+		"preserveSymlinks": false
 	},
 	"include": ["src/**/*"],
 	"exclude": ["node_modules", "dist", "**/*.test.ts"]

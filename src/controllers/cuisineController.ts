@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { Request, Response, RequestHandler } from 'express';
 import { CuisineService } from '@/services/cuisineService';
 import {
 	validateData,
@@ -9,163 +9,159 @@ import { ApiResponse } from '@/types/common';
 import { Cuisine, LocalizedCuisine } from '@/types/entities';
 import { asyncHandler } from '@/middleware/errorHandler';
 
-export class CuisineController {
-	/**
-	 * Create a new cuisine
-	 */
-	static createCuisine = asyncHandler(
-		async (req: Request, res: Response<ApiResponse<Cuisine>>) => {
-			const { isValid, data, errors } = validateData(
-				createCuisineSchema,
-				req.body,
-			);
+/**
+ * Create a new cuisine
+ */
+export const createCuisine: RequestHandler = asyncHandler(
+	async (req: Request, res: Response<ApiResponse<Cuisine>>) => {
+		const { isValid, data, errors } = validateData(
+			createCuisineSchema,
+			req.body,
+		);
 
-			if (!isValid) {
-				res.status(400).json({
-					success: false,
-					error: 'Validation error',
-					errors,
-				});
-				return;
-			}
-
-			const cuisine = await CuisineService.createCuisine(data!);
-
-			res.status(201).json({
-				success: true,
-				data: cuisine,
-				message: 'Cuisine created successfully',
+		if (!isValid) {
+			res.status(400).json({
+				success: false,
+				error: 'Validation error',
+				errors,
 			});
-		},
-	);
+			return;
+		}
 
-	/**
-	 * Get all cuisines (localized)
-	 */
-	static getAllCuisines = asyncHandler(
-		async (req: Request, res: Response<ApiResponse<LocalizedCuisine[]>>) => {
-			const userLanguage = req.user?.language || 'es_ES';
-			const cuisines = await CuisineService.getAllLocalizedCuisines(
-				userLanguage,
-			);
+		const cuisine = await CuisineService.createCuisine(data!);
 
-			res.json({
-				success: true,
-				data: cuisines,
+		res.status(201).json({
+			success: true,
+			data: cuisine,
+			message: 'Cuisine created successfully',
+		});
+	},
+);
+
+/**
+ * Get all cuisines (localized)
+ */
+export const getAllCuisines: RequestHandler = asyncHandler(
+	async (req: Request, res: Response<ApiResponse<LocalizedCuisine[]>>) => {
+		const userLanguage = req.user?.language || 'es_ES';
+		const cuisines = await CuisineService.getAllLocalizedCuisines(userLanguage);
+
+		res.json({
+			success: true,
+			data: cuisines,
+		});
+	},
+);
+
+/**
+ * Get cuisine by ID (localized)
+ */
+export const getCuisineById: RequestHandler = asyncHandler(
+	async (req: Request, res: Response<ApiResponse<LocalizedCuisine>>) => {
+		const { id } = req.params;
+		const userLanguage = req.user?.language || 'es_ES';
+
+		const cuisine = await CuisineService.getLocalizedCuisineById(
+			id,
+			userLanguage,
+		);
+
+		if (!cuisine) {
+			res.status(404).json({
+				success: false,
+				error: 'Cuisine not found',
 			});
-		},
-	);
+			return;
+		}
 
-	/**
-	 * Get cuisine by ID (localized)
-	 */
-	static getCuisineById = asyncHandler(
-		async (req: Request, res: Response<ApiResponse<LocalizedCuisine>>) => {
-			const { id } = req.params;
-			const userLanguage = req.user?.language || 'es_ES';
+		res.json({
+			success: true,
+			data: cuisine,
+		});
+	},
+);
 
-			const cuisine = await CuisineService.getLocalizedCuisineById(
-				id,
-				userLanguage,
-			);
+/**
+ * Update cuisine
+ */
+export const updateCuisine: RequestHandler = asyncHandler(
+	async (req: Request, res: Response<ApiResponse<Cuisine>>) => {
+		const { id } = req.params;
+		const { isValid, data, errors } = validateData(
+			updateCuisineSchema,
+			req.body,
+		);
 
-			if (!cuisine) {
-				res.status(404).json({
-					success: false,
-					error: 'Cuisine not found',
-				});
-				return;
-			}
-
-			res.json({
-				success: true,
-				data: cuisine,
+		if (!isValid) {
+			res.status(400).json({
+				success: false,
+				error: 'Validation error',
+				errors,
 			});
-		},
-	);
+			return;
+		}
 
-	/**
-	 * Update cuisine
-	 */
-	static updateCuisine = asyncHandler(
-		async (req: Request, res: Response<ApiResponse<Cuisine>>) => {
-			const { id } = req.params;
-			const { isValid, data, errors } = validateData(
-				updateCuisineSchema,
-				req.body,
-			);
+		const updatedCuisine = await CuisineService.updateCuisine(id, data!);
 
-			if (!isValid) {
-				res.status(400).json({
-					success: false,
-					error: 'Validation error',
-					errors,
-				});
-				return;
-			}
+		res.json({
+			success: true,
+			data: updatedCuisine,
+			message: 'Cuisine updated successfully',
+		});
+	},
+);
 
-			const updatedCuisine = await CuisineService.updateCuisine(id, data!);
+/**
+ * Delete cuisine
+ */
+export const deleteCuisine: RequestHandler = asyncHandler(
+	async (req: Request, res: Response<ApiResponse>) => {
+		const { id } = req.params;
 
-			res.json({
-				success: true,
-				data: updatedCuisine,
-				message: 'Cuisine updated successfully',
+		await CuisineService.deleteCuisine(id);
+
+		res.json({
+			success: true,
+			message: 'Cuisine deleted successfully',
+		});
+	},
+);
+
+/**
+ * Search cuisines
+ */
+export const searchCuisines: RequestHandler = asyncHandler(
+	async (req: Request, res: Response<ApiResponse<LocalizedCuisine[]>>) => {
+		const { q: query } = req.query;
+
+		if (!query || typeof query !== 'string') {
+			res.status(400).json({
+				success: false,
+				error: 'Search query is required',
 			});
-		},
-	);
+			return;
+		}
 
-	/**
-	 * Delete cuisine
-	 */
-	static deleteCuisine = asyncHandler(
-		async (req: Request, res: Response<ApiResponse>) => {
-			const { id } = req.params;
+		const userLanguage = req.user?.language || 'es_ES';
+		const cuisines = await CuisineService.searchCuisines(query, userLanguage);
 
-			await CuisineService.deleteCuisine(id);
+		res.json({
+			success: true,
+			data: cuisines,
+		});
+	},
+);
 
-			res.json({
-				success: true,
-				message: 'Cuisine deleted successfully',
-			});
-		},
-	);
+/**
+ * Get cuisine statistics
+ */
+export const getCuisineStats: RequestHandler = asyncHandler(
+	async (req: Request, res: Response<ApiResponse>) => {
+		const stats = await CuisineService.getCuisineStats();
 
-	/**
-	 * Search cuisines
-	 */
-	static searchCuisines = asyncHandler(
-		async (req: Request, res: Response<ApiResponse<LocalizedCuisine[]>>) => {
-			const { q: query } = req.query;
-
-			if (!query || typeof query !== 'string') {
-				res.status(400).json({
-					success: false,
-					error: 'Search query is required',
-				});
-				return;
-			}
-
-			const userLanguage = req.user?.language || 'es_ES';
-			const cuisines = await CuisineService.searchCuisines(query, userLanguage);
-
-			res.json({
-				success: true,
-				data: cuisines,
-			});
-		},
-	);
-
-	/**
-	 * Get cuisine statistics
-	 */
-	static getCuisineStats = asyncHandler(
-		async (req: Request, res: Response<ApiResponse>) => {
-			const stats = await CuisineService.getCuisineStats();
-
-			res.json({
-				success: true,
-				data: stats,
-			});
-		},
-	);
-}
+		res.json({
+			success: true,
+			data: stats,
+		});
+	},
+);

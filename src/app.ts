@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Express } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
@@ -18,7 +18,7 @@ import addressRoutes from '@/routes/addressRoutes';
 // Load environment variables
 dotenv.config();
 
-const app = express();
+const app: Express = express();
 
 // Security middleware
 app.use(

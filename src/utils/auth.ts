@@ -1,13 +1,16 @@
-import jwt from 'jsonwebtoken';
+import jwt, { SignOptions } from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { JwtPayload, Language } from '@/types/common';
 
 const JWT_SECRET = process.env.JWT_SECRET;
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
+const JWT_EXPIRES_IN = 3600 * 24 * 7;
 
 if (!JWT_SECRET) {
 	throw new Error('JWT_SECRET environment variable is required');
 }
+
+// Asegurar que JWT_SECRET es un string válido
+const jwtSecret: string = JWT_SECRET;
 
 /**
  * Generates a JWT token for a user
@@ -17,15 +20,17 @@ export const generateToken = (
 	email: string,
 	language: Language,
 ): string => {
-	const payload: JwtPayload = {
+	const payload = {
 		userId,
 		email,
 		language,
 	};
 
-	return jwt.sign(payload, JWT_SECRET, {
+	const options: SignOptions = {
 		expiresIn: JWT_EXPIRES_IN,
-	});
+	};
+
+	return jwt.sign(payload, jwtSecret, options);
 };
 
 /**
@@ -33,7 +38,7 @@ export const generateToken = (
  */
 export const verifyToken = (token: string): JwtPayload => {
 	try {
-		const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload;
+		const decoded = jwt.verify(token, jwtSecret) as JwtPayload;
 		return decoded;
 	} catch (error) {
 		throw new Error('Invalid or expired token');
