@@ -10,7 +10,6 @@
 		"test": "jest",
 		"lint": "eslint src/**/*.ts",
 		"lint:fix": "eslint src/**/*.ts --fix",
-		"db:migrate": "tsx src/database/migrate.ts",
 		"db:seed": "tsx src/database/seed.ts"
 	},
 	"keywords": [
