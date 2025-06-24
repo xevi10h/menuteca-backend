@@ -1,0 +1,293 @@
+import { supabase } from '@/database/client';
+import { User, CreateUserInput, UpdateUserInput } from '@/types/entities';
+import { hashPassword, verifyPassword } from '@/utils/auth';
+import { AppError } from '@/middleware/errorHandler';
+
+export class UserService {
+	/**
+	 * Create a new user
+	 */
+	static async createUser(userData: CreateUserInput): Promise<User> {
+		const { password, ...userDataWithoutPassword } = userData;
+
+		let hashedPassword: string | undefined;
+		if (password) {
+			hashedPassword = await hashPassword(password);
+		}
+
+		const { data, error } = await supabase
+			.from('users')
+			.insert({
+				...userDataWithoutPassword,
+				password_hash: hashedPassword,
+				has_password: !!password,
+			})
+			.select()
+			.single();
+
+		if (error) {
+			if (error.code === '23505') {
+				// Unique constraint violation
+				if (error.message.includes('email')) {
+					throw new AppError('Email already exists', 409);
+				}
+				if (error.message.includes('username')) {
+					throw new AppError('Username already exists', 409);
+				}
+				if (error.message.includes('google_id')) {
+					throw new AppError('Google account already linked', 409);
+				}
+			}
+			throw new AppError('Failed to create user', 500);
+		}
+
+		// Remove password_hash from response
+		const { password_hash, ...userWithoutPassword } = data;
+		return userWithoutPassword as User;
+	}
+
+	/**
+	 * Get user by ID
+	 */
+	static async getUserById(userId: string): Promise<User | null> {
+		const { data, error } = await supabase
+			.from('users')
+			.select('*')
+			.eq('id', userId)
+			.single();
+
+		if (error) {
+			if (error.code === 'PGRST116') {
+				// Not found
+				return null;
+			}
+			throw new AppError('Failed to fetch user', 500);
+		}
+
+		// Remove password_hash from response
+		const { password_hash, ...userWithoutPassword } = data;
+		return userWithoutPassword as User;
+	}
+
+	/**
+	 * Get user by email
+	 */
+	static async getUserByEmail(email: string): Promise<User | null> {
+		const { data, error } = await supabase
+			.from('users')
+			.select('*')
+			.eq('email', email)
+			.single();
+
+		if (error) {
+			if (error.code === 'PGRST116') {
+				// Not found
+				return null;
+			}
+			throw new AppError('Failed to fetch user', 500);
+		}
+
+		// Remove password_hash from response
+		const { password_hash, ...userWithoutPassword } = data;
+		return userWithoutPassword as User;
+	}
+
+	/**
+	 * Get user by Google ID
+	 */
+	static async getUserByGoogleId(googleId: string): Promise<User | null> {
+		const { data, error } = await supabase
+			.from('users')
+			.select('*')
+			.eq('google_id', googleId)
+			.single();
+
+		if (error) {
+			if (error.code === 'PGRST116') {
+				// Not found
+				return null;
+			}
+			throw new AppError('Failed to fetch user', 500);
+		}
+
+		// Remove password_hash from response
+		const { password_hash, ...userWithoutPassword } = data;
+		return userWithoutPassword as User;
+	}
+
+	/**
+	 * Update user
+	 */
+	static async updateUser(
+		userId: string,
+		updateData: UpdateUserInput,
+	): Promise<User> {
+		const { data, error } = await supabase
+			.from('users')
+			.update(updateData)
+			.eq('id', userId)
+			.select()
+			.single();
+
+		if (error) {
+			if (error.code === 'PGRST116') {
+				// Not found
+				throw new AppError('User not found', 404);
+			}
+			if (error.code === '23505') {
+				// Unique constraint violation
+				if (error.message.includes('username')) {
+					throw new AppError('Username already exists', 409);
+				}
+			}
+			throw new AppError('Failed to update user', 500);
+		}
+
+		// Remove password_hash from response
+		const { password_hash, ...userWithoutPassword } = data;
+		return userWithoutPassword as User;
+	}
+
+	/**
+	 * Delete user
+	 */
+	static async deleteUser(userId: string): Promise<void> {
+		const { error } = await supabase.from('users').delete().eq('id', userId);
+
+		if (error) {
+			throw new AppError('Failed to delete user', 500);
+		}
+	}
+
+	/**
+	 * Verify user password (for login)
+	 */
+	static async verifyUserPassword(
+		email: string,
+		password: string,
+	): Promise<User | null> {
+		// First get the user with password hash
+		const { data, error } = await supabase
+			.from('users')
+			.select('*')
+			.eq('email', email)
+			.single();
+
+		if (error || !data) {
+			return null;
+		}
+
+		if (!data.password_hash) {
+			throw new AppError('User has no password set', 400);
+		}
+
+		const isValidPassword = await verifyPassword(password, data.password_hash);
+		if (!isValidPassword) {
+			return null;
+		}
+
+		// Remove password_hash from response
+		const { password_hash, ...userWithoutPassword } = data;
+		return userWithoutPassword as User;
+	}
+
+	/**
+	 * Update user password
+	 */
+	static async updatePassword(
+		userId: string,
+		newPassword: string,
+	): Promise<void> {
+		const hashedPassword = await hashPassword(newPassword);
+
+		const { error } = await supabase
+			.from('users')
+			.update({
+				password_hash: hashedPassword,
+				has_password: true,
+			})
+			.eq('id', userId);
+
+		if (error) {
+			if (error.code === 'PGRST116') {
+				// Not found
+				throw new AppError('User not found', 404);
+			}
+			throw new AppError('Failed to update password', 500);
+		}
+	}
+
+	/**
+	 * Check if username is available
+	 */
+	static async isUsernameAvailable(username: string): Promise<boolean> {
+		const { data, error } = await supabase
+			.from('users')
+			.select('id')
+			.eq('username', username)
+			.single();
+
+		if (error && error.code === 'PGRST116') {
+			return true; // Username not found, so it's available
+		}
+
+		return !data; // If data exists, username is taken
+	}
+
+	/**
+	 * Check if email is available
+	 */
+	static async isEmailAvailable(email: string): Promise<boolean> {
+		const { data, error } = await supabase
+			.from('users')
+			.select('id')
+			.eq('email', email)
+			.single();
+
+		if (error && error.code === 'PGRST116') {
+			return true; // Email not found, so it's available
+		}
+
+		return !data; // If data exists, email is taken
+	}
+
+	/**
+	 * Get all users (admin function)
+	 */
+	static async getAllUsers(
+		page: number = 1,
+		limit: number = 20,
+	): Promise<{ users: User[]; total: number }> {
+		const offset = (page - 1) * limit;
+
+		// Get total count
+		const { count, error: countError } = await supabase
+			.from('users')
+			.select('*', { count: 'exact', head: true });
+
+		if (countError) {
+			throw new AppError('Failed to count users', 500);
+		}
+
+		// Get users
+		const { data, error } = await supabase
+			.from('users')
+			.select('*')
+			.range(offset, offset + limit - 1)
+			.order('created_at', { ascending: false });
+
+		if (error) {
+			throw new AppError('Failed to fetch users', 500);
+		}
+
+		// Remove password_hash from all users
+		const usersWithoutPassword = data.map(
+			({ password_hash, ...user }) => user as User,
+		);
+
+		return {
+			users: usersWithoutPassword,
+			total: count || 0,
+		};
+	}
+}
