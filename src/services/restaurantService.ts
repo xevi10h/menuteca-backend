@@ -265,7 +265,8 @@ export class RestaurantService {
 		let filteredRestaurants = restaurants;
 		if (filters.radius && filters.latitude && filters.longitude) {
 			filteredRestaurants = restaurants.filter(
-				(restaurant) => restaurant.distance <= filters.radius,
+				(restaurant) =>
+					restaurant.distance && restaurant.distance <= filters.radius,
 			);
 		}
 

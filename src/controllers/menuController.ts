@@ -6,7 +6,7 @@ import {
 	updateMenuSchema,
 } from '@/utils/validation';
 import { ApiResponse } from '@/types/common';
-import { Menu, LocalizedMenu } from '@/types/entities';
+import { Menu, LocalizedMenu, DrinkInclusion } from '@/types/entities';
 import { asyncHandler } from '@/middleware/errorHandler';
 import { RestaurantService } from '@/services/restaurantService';
 
@@ -56,7 +56,25 @@ export const createMenu: RequestHandler = asyncHandler(
 			return;
 		}
 
-		const menu = await MenuService.createMenu(data!, req.user.language);
+		// Ensure drinks object has all required boolean values
+		const menuData = {
+			...data!,
+			drinks: data!.drinks
+				? ({
+						water: data!.drinks.water ?? false,
+						wine: data!.drinks.wine ?? false,
+						soft_drinks: data!.drinks.soft_drinks ?? false,
+						beer: data!.drinks.beer ?? false,
+				  } as DrinkInclusion)
+				: ({
+						water: false,
+						wine: false,
+						soft_drinks: false,
+						beer: false,
+				  } as DrinkInclusion),
+		};
+
+		const menu = await MenuService.createMenu(menuData, req.user.language);
 
 		res.status(201).json({
 			success: true,
@@ -157,9 +175,20 @@ export const updateMenu: RequestHandler = asyncHandler(
 			return;
 		}
 
+		// Ensure drinks object has all required boolean values if provided
+		const menuUpdateData = {
+			...data!,
+			drinks: {
+				water: data?.drinks?.water || false,
+				wine: data?.drinks?.wine || false,
+				soft_drinks: data?.drinks?.soft_drinks || false,
+				beer: data?.drinks?.beer || false,
+			} as DrinkInclusion,
+		};
+
 		const updatedMenu = await MenuService.updateMenu(
 			id,
-			data!,
+			menuUpdateData,
 			req.user.language,
 		);
 

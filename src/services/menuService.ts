@@ -6,7 +6,7 @@ import {
 	LocalizedMenu,
 	LocalizedDish,
 } from '@/types/entities';
-import { Language } from '@/types/common';
+import { Language, TranslatedText } from '@/types/common';
 import { DishService } from './dishService';
 import {
 	createUserTranslatedText,
@@ -126,28 +126,28 @@ export class MenuService {
 		userLanguage: Language,
 	): Promise<Menu> {
 		// Handle name translation update
-		let finalUpdateData = { ...updateData };
+		let finalName: TranslatedText | undefined = undefined;
 
 		if (updateData.name) {
 			// Get existing menu to merge translations
 			const existingMenu = await this.getMenuById(menuId);
 			if (existingMenu) {
-				finalUpdateData.name = mergeTranslatedText(
+				finalName = mergeTranslatedText(
 					existingMenu.name,
 					updateData.name,
 					userLanguage,
 				);
 			} else {
-				finalUpdateData.name = createUserTranslatedText(
-					updateData.name,
-					userLanguage,
-				);
+				finalName = createUserTranslatedText(updateData.name, userLanguage);
 			}
 		}
 
 		const { data, error } = await supabase
 			.from('menus')
-			.update(finalUpdateData)
+			.update({
+				...updateData,
+				name: finalName,
+			})
 			.eq('id', menuId)
 			.select()
 			.single();

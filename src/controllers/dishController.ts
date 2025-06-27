@@ -9,6 +9,7 @@ import {
 } from '@/utils/validation';
 import { ApiResponse } from '@/types/common';
 import { Dish, LocalizedDish } from '@/types/entities';
+import { DishCategory } from '@/types/common';
 import { asyncHandler } from '@/middleware/errorHandler';
 
 /**
@@ -60,7 +61,13 @@ export const createDish: RequestHandler = asyncHandler(
 			return;
 		}
 
-		const dish = await DishService.createDish(data!, req.user.language);
+		// Ensure category is properly typed
+		const dishData = {
+			...data!,
+			category: data!.category as DishCategory,
+		};
+
+		const dish = await DishService.createDish(dishData, req.user.language);
 
 		res.status(201).json({
 			success: true,
@@ -172,9 +179,15 @@ export const updateDish: RequestHandler = asyncHandler(
 			return;
 		}
 
+		// Ensure category is properly typed if provided
+		const dishUpdateData = {
+			...data!,
+			...(data!.category && { category: data!.category as DishCategory }),
+		};
+
 		const updatedDish = await DishService.updateDish(
 			id,
-			data!,
+			dishUpdateData,
 			req.user.language,
 		);
 

@@ -7,6 +7,7 @@ import {
 } from '@/utils/validation';
 import { ApiResponse, PaginatedResponse } from '@/types/common';
 import { Restaurant, RestaurantWithDetails } from '@/types/entities';
+import { RestaurantTag } from '@/types/common';
 import { asyncHandler } from '@/middleware/errorHandler';
 
 /**
@@ -36,10 +37,15 @@ export const createRestaurant: RequestHandler = asyncHandler(
 			return;
 		}
 
-		const restaurant = await RestaurantService.createRestaurant({
+		// Ensure required fields are properly typed
+		const restaurantData = {
 			...data!,
 			owner_id: req.user.userId,
-		});
+			images: data!.images || [], // Ensure images is never undefined
+			tags: (data!.tags || []) as RestaurantTag[], // Type assertion for tags
+		};
+
+		const restaurant = await RestaurantService.createRestaurant(restaurantData);
 
 		res.status(201).json({
 			success: true,
@@ -197,9 +203,15 @@ export const updateRestaurant: RequestHandler = asyncHandler(
 			return;
 		}
 
+		// Ensure tags are properly typed if provided
+		const restaurantUpdateData = {
+			...data!,
+			tags: data?.tags ? (data.tags as RestaurantTag[]) : [],
+		};
+
 		const updatedRestaurant = await RestaurantService.updateRestaurant(
 			id,
-			data!,
+			restaurantUpdateData,
 		);
 
 		res.json({
