@@ -14,6 +14,10 @@ import authRoutes from '@/routes/authRoutes';
 import userRoutes from '@/routes/userRoutes';
 import cuisineRoutes from '@/routes/cuisineRoutes';
 import addressRoutes from '@/routes/addressRoutes';
+import restaurantRoutes from '@/routes/restaurantRoutes';
+import menuRoutes from '@/routes/menuRoutes';
+import dishRoutes from '@/routes/dishRoutes';
+import reviewRoutes from '@/routes/reviewRoutes';
 
 // Load environment variables
 dotenv.config();
@@ -69,6 +73,10 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/cuisines', cuisineRoutes);
 app.use('/api/addresses', addressRoutes);
+app.use('/api/restaurants', restaurantRoutes);
+app.use('/api/menus', menuRoutes);
+app.use('/api/dishes', dishRoutes);
+app.use('/api/reviews', reviewRoutes);
 
 // API documentation endpoint
 app.get('/api', (req, res) => {

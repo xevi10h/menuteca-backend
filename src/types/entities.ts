@@ -105,7 +105,6 @@ export interface Restaurant {
 	main_image: string;
 	profile_image?: string;
 	images: string[];
-	distance?: number;
 	address_id: string;
 	tags: RestaurantTag[];
 	phone?: string;
@@ -174,7 +173,7 @@ export interface Menu {
 
 export interface CreateMenuInput {
 	restaurant_id: string;
-	name: TranslatedText;
+	name: string; // Will be converted to TranslatedText
 	days: string[];
 	start_time: string;
 	end_time: string;
@@ -190,7 +189,7 @@ export interface CreateMenuInput {
 }
 
 export interface UpdateMenuInput {
-	name?: TranslatedText;
+	name?: string; // Will be converted to TranslatedText
 	days?: string[];
 	start_time?: string;
 	end_time?: string;
@@ -226,8 +225,8 @@ export interface Dish {
 
 export interface CreateDishInput {
 	menu_id: string;
-	name: TranslatedText;
-	description: TranslatedText;
+	name: string; // Will be converted to TranslatedText
+	description: string; // Will be converted to TranslatedText
 	extra_price?: number;
 	category: DishCategory;
 	is_vegetarian?: boolean;
@@ -238,8 +237,8 @@ export interface CreateDishInput {
 }
 
 export interface UpdateDishInput {
-	name?: TranslatedText;
-	description?: TranslatedText;
+	name?: string; // Will be converted to TranslatedText
+	description?: string; // Will be converted to TranslatedText
 	extra_price?: number;
 	category?: DishCategory;
 	is_vegetarian?: boolean;
@@ -353,6 +352,7 @@ export interface LocalizedReview {
 }
 
 export interface RestaurantWithDetails extends Restaurant {
+	distance?: number;
 	cuisine: LocalizedCuisine;
 	address: LocalizedAddress;
 	menus: LocalizedMenu[];

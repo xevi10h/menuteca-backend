@@ -186,7 +186,10 @@ export const updateRestaurantSchema = z.object({
 // Menu schemas
 export const createMenuSchema = z.object({
 	restaurant_id: z.string().uuid('Invalid restaurant ID'),
-	name: translatedTextSchema,
+	name: z
+		.string()
+		.min(2, 'Menu name must be at least 2 characters')
+		.max(255, 'Menu name must be at most 255 characters'),
 	days: z
 		.array(z.enum(Object.values(Days) as [string, ...string[]]))
 		.min(1, 'At least one day must be selected'),
@@ -217,7 +220,11 @@ export const createMenuSchema = z.object({
 });
 
 export const updateMenuSchema = z.object({
-	name: translatedTextSchema.optional(),
+	name: z
+		.string()
+		.min(2, 'Menu name must be at least 2 characters')
+		.max(255, 'Menu name must be at most 255 characters')
+		.optional(),
 	days: z
 		.array(z.enum(Object.values(Days) as [string, ...string[]]))
 		.min(1, 'At least one day must be selected')
@@ -255,8 +262,14 @@ export const updateMenuSchema = z.object({
 // Dish schemas
 export const createDishSchema = z.object({
 	menu_id: z.string().uuid('Invalid menu ID'),
-	name: translatedTextSchema,
-	description: translatedTextSchema,
+	name: z
+		.string()
+		.min(2, 'Dish name must be at least 2 characters')
+		.max(255, 'Dish name must be at most 255 characters'),
+	description: z
+		.string()
+		.min(10, 'Description must be at least 10 characters')
+		.max(1000, 'Description must be at most 1000 characters'),
 	extra_price: z
 		.number()
 		.min(0, 'Extra price must be at least 0')
@@ -271,8 +284,16 @@ export const createDishSchema = z.object({
 });
 
 export const updateDishSchema = z.object({
-	name: translatedTextSchema.optional(),
-	description: translatedTextSchema.optional(),
+	name: z
+		.string()
+		.min(2, 'Dish name must be at least 2 characters')
+		.max(255, 'Dish name must be at most 255 characters')
+		.optional(),
+	description: z
+		.string()
+		.min(10, 'Description must be at least 10 characters')
+		.max(1000, 'Description must be at most 1000 characters')
+		.optional(),
 	extra_price: z
 		.number()
 		.min(0, 'Extra price must be at least 0')
