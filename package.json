@@ -10,7 +10,9 @@
 		"test": "jest",
 		"lint": "eslint src/**/*.ts",
 		"lint:fix": "eslint src/**/*.ts --fix",
-		"db:seed": "tsx src/database/seed.ts"
+		"db:seed": "tsx src/database/seed.ts",
+		"db:clean": "tsx src/database/clean.ts",
+		"db:reset": "npm run db:clean && npm run db:seed"
 	},
 	"keywords": [
 		"restaurant",
