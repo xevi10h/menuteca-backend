@@ -8,6 +8,7 @@ import {
 	searchRestaurants,
 	getMyRestaurants,
 	updateRestaurantRating,
+	softDeleteRestaurant,
 } from '@/controllers/restaurantController';
 import { authenticateToken, optionalAuth } from '@/middleware/auth';
 
@@ -22,6 +23,7 @@ router.get('/:id', optionalAuth, getRestaurantById);
 router.post('/', authenticateToken, createRestaurant);
 router.put('/:id', authenticateToken, updateRestaurant);
 router.delete('/:id', authenticateToken, deleteRestaurant);
+router.delete('/:id/soft', authenticateToken, softDeleteRestaurant);
 
 // Owner routes
 router.get('/owner/mine', authenticateToken, getMyRestaurants);

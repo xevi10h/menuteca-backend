@@ -57,6 +57,7 @@ export class MenuService {
 			.from('menus')
 			.select('*')
 			.eq('id', menuId)
+			.is('deleted_at', null)
 			.single();
 
 		if (error) {
@@ -96,6 +97,7 @@ export class MenuService {
 			.select('*')
 			.eq('restaurant_id', restaurantId)
 			.eq('is_active', true)
+			.is('deleted_at', null)
 			.order('created_at', { ascending: true });
 
 		if (error) {
@@ -178,6 +180,21 @@ export class MenuService {
 	}
 
 	/**
+	 * Soft delete menu
+	 */
+	static async softDeleteMenu(menuId: string): Promise<void> {
+		const { error } = await supabase
+			.from('menus')
+			.update({ deleted_at: new Date().toISOString() })
+			.eq('id', menuId)
+			.is('deleted_at', null);
+
+		if (error) {
+			throw new AppError('Failed to delete menu', 500);
+		}
+	}
+
+	/**
 	 * Get available menus for a specific day and time
 	 */
 	static async getAvailableMenus(
@@ -191,6 +208,7 @@ export class MenuService {
 			.select('*')
 			.eq('restaurant_id', restaurantId)
 			.eq('is_active', true)
+			.is('deleted_at', null)
 			.contains('days', [day]);
 
 		if (error) {
@@ -279,7 +297,7 @@ export class MenuService {
 		let query = supabase.from('menus').select('*');
 
 		if (restaurantId) {
-			query = query.eq('restaurant_id', restaurantId);
+			query = query.eq('restaurant_id', restaurantId).is('deleted_at', null);
 		}
 
 		const { data, error } = await query;

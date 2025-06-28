@@ -299,6 +299,52 @@ export const deleteReview: RequestHandler = asyncHandler(
 );
 
 /**
+ * Soft delete review (author only)
+ */
+export const softDeleteReview: RequestHandler = asyncHandler(
+	async (req: Request, res: Response<ApiResponse>) => {
+		const { id } = req.params;
+
+		if (!req.user) {
+			res.status(401).json({
+				success: false,
+				error: 'User not authenticated',
+			});
+			return;
+		}
+
+		// Check ownership
+		const review = await ReviewService.getReviewById(id);
+		if (!review) {
+			res.status(404).json({
+				success: false,
+				error: 'Review not found',
+			});
+			return;
+		}
+
+		if (review.user_id !== req.user.userId) {
+			res.status(403).json({
+				success: false,
+				error: 'Not authorized to delete this review',
+			});
+			return;
+		}
+
+		const restaurantId = review.restaurant_id;
+		await ReviewService.softDeleteReview(id);
+
+		// Update restaurant rating
+		await RestaurantService.updateRestaurantRating(restaurantId);
+
+		res.json({
+			success: true,
+			message: 'Review deleted successfully',
+		});
+	},
+);
+
+/**
  * Add restaurant response to review (restaurant owner only)
  */
 export const addRestaurantResponse: RequestHandler = asyncHandler(

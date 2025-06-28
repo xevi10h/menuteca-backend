@@ -246,6 +246,51 @@ export const deleteMenu: RequestHandler = asyncHandler(
 );
 
 /**
+ * Soft delete menu (owner only)
+ */
+export const softDeleteMenu: RequestHandler = asyncHandler(
+	async (req: Request, res: Response<ApiResponse>) => {
+		const { id } = req.params;
+
+		if (!req.user) {
+			res.status(401).json({
+				success: false,
+				error: 'User not authenticated',
+			});
+			return;
+		}
+
+		// Check ownership through menu -> restaurant
+		const menu = await MenuService.getMenuById(id);
+		if (!menu) {
+			res.status(404).json({
+				success: false,
+				error: 'Menu not found',
+			});
+			return;
+		}
+
+		const restaurant = await RestaurantService.getRestaurantById(
+			menu.restaurant_id,
+		);
+		if (!restaurant || restaurant.owner_id !== req.user.userId) {
+			res.status(403).json({
+				success: false,
+				error: 'Not authorized to delete this menu',
+			});
+			return;
+		}
+
+		await MenuService.softDeleteMenu(id);
+
+		res.json({
+			success: true,
+			message: 'Menu deleted successfully',
+		});
+	},
+);
+
+/**
  * Get available menus for current time and day
  */
 export const getAvailableMenus: RequestHandler = asyncHandler(

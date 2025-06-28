@@ -182,7 +182,7 @@ export const updateDish: RequestHandler = asyncHandler(
 		// Ensure category is properly typed if provided
 		const dishUpdateData = {
 			...data!,
-			...(data!.category && { category: data!.category as DishCategory }),
+			category: data?.category as DishCategory,
 		};
 
 		const updatedDish = await DishService.updateDish(

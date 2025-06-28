@@ -36,6 +36,7 @@ export interface Database {
 					has_password: boolean;
 					created_at: string;
 					updated_at: string;
+					deleted_at: string | null;
 				};
 				Insert: {
 					id?: string;
@@ -49,6 +50,7 @@ export interface Database {
 					has_password?: boolean;
 					created_at?: string;
 					updated_at?: string;
+					deleted_at?: string | null;
 				};
 				Update: {
 					id?: string;
@@ -61,6 +63,7 @@ export interface Database {
 					language?: string;
 					has_password?: boolean;
 					updated_at?: string;
+					deleted_at?: string | null;
 				};
 			};
 			addresses: {
@@ -143,6 +146,7 @@ export interface Database {
 					is_active: boolean;
 					created_at: string;
 					updated_at: string;
+					deleted_at: string | null;
 				};
 				Insert: {
 					id?: string;
@@ -161,6 +165,7 @@ export interface Database {
 					is_active?: boolean;
 					created_at?: string;
 					updated_at?: string;
+					deleted_at?: string | null;
 				};
 				Update: {
 					id?: string;
@@ -177,6 +182,7 @@ export interface Database {
 					reservation_link?: string | null;
 					is_active?: boolean;
 					updated_at?: string;
+					deleted_at?: string | null;
 				};
 			};
 			menus: {
@@ -199,6 +205,7 @@ export interface Database {
 					is_active: boolean;
 					created_at: string;
 					updated_at: string;
+					deleted_at: string | null;
 				};
 				Insert: {
 					id?: string;
@@ -219,6 +226,7 @@ export interface Database {
 					is_active?: boolean;
 					created_at?: string;
 					updated_at?: string;
+					deleted_at?: string | null;
 				};
 				Update: {
 					id?: string;
@@ -237,6 +245,7 @@ export interface Database {
 					has_minimum_people?: boolean;
 					is_active?: boolean;
 					updated_at?: string;
+					deleted_at?: string | null;
 				};
 			};
 			dishes: {
@@ -299,6 +308,7 @@ export interface Database {
 					restaurant_response_date: string | null;
 					created_at: string;
 					updated_at: string;
+					deleted_at: string | null;
 				};
 				Insert: {
 					id?: string;
@@ -311,6 +321,7 @@ export interface Database {
 					restaurant_response_date?: string | null;
 					created_at?: string;
 					updated_at?: string;
+					deleted_at?: string | null;
 				};
 				Update: {
 					id?: string;
@@ -320,6 +331,7 @@ export interface Database {
 					restaurant_response_message?: any | null;
 					restaurant_response_date?: string | null;
 					updated_at?: string;
+					deleted_at?: string | null;
 				};
 			};
 		};

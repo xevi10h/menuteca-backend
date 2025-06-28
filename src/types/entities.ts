@@ -20,6 +20,7 @@ export interface User {
 	has_password: boolean;
 	created_at: string;
 	updated_at: string;
+	deleted_at?: string;
 }
 
 export interface CreateUserInput {
@@ -113,6 +114,7 @@ export interface Restaurant {
 	is_active: boolean;
 	created_at: string;
 	updated_at: string;
+	deleted_at?: string;
 }
 
 export interface CreateRestaurantInput {
@@ -169,6 +171,7 @@ export interface Menu {
 	is_active: boolean;
 	created_at: string;
 	updated_at: string;
+	deleted_at?: string;
 }
 
 export interface CreateMenuInput {
@@ -261,6 +264,7 @@ export interface Review {
 	restaurant_response_date?: string;
 	created_at: string;
 	updated_at: string;
+	deleted_at?: string;
 }
 
 export interface CreateReviewInput {

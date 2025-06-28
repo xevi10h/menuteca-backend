@@ -12,6 +12,7 @@ import {
 	getRecentReviews,
 	getTopRatedReviews,
 	removeRestaurantResponse,
+	softDeleteReview,
 } from '@/controllers/reviewController';
 import { authenticateToken, optionalAuth } from '@/middleware/auth';
 import { reviewRateLimit } from '@/middleware/rateLimit';
@@ -38,6 +39,7 @@ router.post(
 );
 router.put('/:id', authenticateToken, updateReview);
 router.delete('/:id', authenticateToken, deleteReview);
+router.delete('/:id/soft', authenticateToken, softDeleteReview);
 
 // Restaurant owner routes
 router.post('/:id/response', authenticateToken, addRestaurantResponse);

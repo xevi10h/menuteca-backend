@@ -6,6 +6,7 @@ import {
 	updateMenu,
 	deleteMenu,
 	getAvailableMenus,
+	softDeleteMenu,
 } from '@/controllers/menuController';
 import { authenticateToken, optionalAuth } from '@/middleware/auth';
 
@@ -26,5 +27,6 @@ router.get(
 router.post('/restaurant/:restaurantId', authenticateToken, createMenu);
 router.put('/:id', authenticateToken, updateMenu);
 router.delete('/:id', authenticateToken, deleteMenu);
+router.delete('/:id/soft', authenticateToken, softDeleteMenu);
 
 export default router;

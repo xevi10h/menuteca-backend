@@ -66,6 +66,7 @@ export class ReviewService {
 			.from('reviews')
 			.select('*')
 			.eq('id', reviewId)
+			.is('deleted_at', null)
 			.single();
 
 		if (error) {
@@ -95,6 +96,7 @@ export class ReviewService {
 			`,
 			)
 			.eq('id', reviewId)
+			.is('deleted_at', null)
 			.single();
 
 		if (error) {
@@ -129,7 +131,8 @@ export class ReviewService {
 			`,
 				{ count: 'exact' },
 			)
-			.eq('restaurant_id', restaurantId);
+			.eq('restaurant_id', restaurantId)
+			.is('deleted_at', null);
 
 		// Apply filters
 		if (filters.min_rating) {
@@ -186,7 +189,8 @@ export class ReviewService {
 			`,
 				{ count: 'exact' },
 			)
-			.eq('user_id', userId);
+			.eq('user_id', userId)
+			.is('deleted_at', null);
 
 		// Apply sorting
 		const validSortFields = ['created_at', 'rating', 'updated_at'];
@@ -225,6 +229,7 @@ export class ReviewService {
 			.select('*')
 			.eq('user_id', userId)
 			.eq('restaurant_id', restaurantId)
+			.is('deleted_at', null)
 			.single();
 
 		if (error && error.code !== 'PGRST116') {
@@ -293,6 +298,21 @@ export class ReviewService {
 	}
 
 	/**
+	 * Soft delete review
+	 */
+	static async softDeleteReview(reviewId: string): Promise<void> {
+		const { error } = await supabase
+			.from('reviews')
+			.update({ deleted_at: new Date().toISOString() })
+			.eq('id', reviewId)
+			.is('deleted_at', null);
+
+		if (error) {
+			throw new AppError('Failed to delete review', 500);
+		}
+	}
+
+	/**
 	 * Add restaurant response to review
 	 */
 	static async addRestaurantResponse(
@@ -335,7 +355,8 @@ export class ReviewService {
 		const { data, error } = await supabase
 			.from('reviews')
 			.select('rating, created_at, restaurant_response_message')
-			.eq('restaurant_id', restaurantId);
+			.eq('restaurant_id', restaurantId)
+			.is('deleted_at', null);
 
 		if (error) {
 			throw new AppError('Failed to get review statistics', 500);
@@ -464,6 +485,7 @@ export class ReviewService {
 				restaurants:restaurant_id (id, name, main_image)
 			`,
 			)
+			.is('deleted_at', null)
 			.gte('created_at', thirtyDaysAgo.toISOString())
 			.order('created_at', { ascending: false })
 			.limit(limit);
@@ -494,6 +516,7 @@ export class ReviewService {
 				restaurants:restaurant_id (id, name, main_image)
 			`,
 			)
+			.is('deleted_at', null)
 			.gte('rating', minRating)
 			.order('rating', { ascending: false })
 			.order('created_at', { ascending: false })

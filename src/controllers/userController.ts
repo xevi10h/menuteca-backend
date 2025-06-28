@@ -109,6 +109,28 @@ export const deleteAccount: AsyncControllerFunction = asyncHandler(
 );
 
 /**
+ * Soft delete user account
+ */
+export const softDeleteAccount: AsyncControllerFunction = asyncHandler(
+	async (req, res) => {
+		if (!req.user) {
+			res.status(401).json({
+				success: false,
+				error: 'User not authenticated',
+			});
+			return;
+		}
+
+		await UserService.softDeleteUser(req.user.userId);
+
+		res.json({
+			success: true,
+			message: 'Account deleted successfully',
+		});
+	},
+);
+
+/**
  * Get user by ID (public profile)
  */
 export const getUserById: AsyncControllerFunction<Partial<User>> = asyncHandler(

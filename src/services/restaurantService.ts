@@ -57,6 +57,7 @@ export class RestaurantService {
 			.from('restaurants')
 			.select('*')
 			.eq('id', restaurantId)
+			.is('deleted_at', null)
 			.single();
 
 		if (error) {
@@ -108,6 +109,7 @@ export class RestaurantService {
 			`,
 			)
 			.eq('restaurant_id', restaurantId)
+			.is('deleted_at', null)
 			.order('created_at', { ascending: false })
 			.limit(5);
 
@@ -167,7 +169,8 @@ export class RestaurantService {
 			`,
 				{ count: 'exact' },
 			)
-			.eq('is_active', true);
+			.eq('is_active', true)
+			.is('deleted_at', null);
 
 		// Apply filters
 		if (filters.cuisine_id) {
@@ -309,26 +312,37 @@ export class RestaurantService {
 	}
 
 	/**
-	 * Delete restaurant
+	 * Delete restaurant - Fixed version
 	 */
 	static async deleteRestaurant(restaurantId: string): Promise<void> {
-		// First, delete all related data
+		// First, get all menu IDs for this restaurant
+		const { data: menus, error: menusError } = await supabase
+			.from('menus')
+			.select('id')
+			.eq('restaurant_id', restaurantId);
+
+		if (menusError) {
+			throw new AppError('Failed to fetch restaurant menus for deletion', 500);
+		}
+
+		// Extract menu IDs
+		const menuIds = menus?.map((menu) => menu.id) || [];
+
+		// Delete related data in the correct order
 		await Promise.all([
 			// Delete reviews
 			supabase.from('reviews').delete().eq('restaurant_id', restaurantId),
-			// Delete dishes through menus
-			supabase
-				.from('dishes')
-				.delete()
-				.in(
-					'menu_id',
-					supabase.from('menus').select('id').eq('restaurant_id', restaurantId),
-				),
+
+			// Delete dishes (only if there are menus)
+			...(menuIds.length > 0
+				? [supabase.from('dishes').delete().in('menu_id', menuIds)]
+				: []),
+
 			// Delete menus
 			supabase.from('menus').delete().eq('restaurant_id', restaurantId),
 		]);
 
-		// Then delete the restaurant
+		// Finally, delete the restaurant
 		const { error } = await supabase
 			.from('restaurants')
 			.delete()
@@ -337,6 +351,36 @@ export class RestaurantService {
 		if (error) {
 			throw new AppError('Failed to delete restaurant', 500);
 		}
+	}
+
+	/**
+	 * Soft delete restaurant
+	 */
+	static async softDeleteRestaurant(restaurantId: string): Promise<void> {
+		const { error } = await supabase
+			.from('restaurants')
+			.update({ deleted_at: new Date().toISOString() })
+			.eq('id', restaurantId)
+			.is('deleted_at', null);
+
+		if (error) {
+			throw new AppError('Failed to delete restaurant', 500);
+		}
+
+		// Soft delete related menus and reviews
+		await Promise.all([
+			supabase
+				.from('menus')
+				.update({ deleted_at: new Date().toISOString() })
+				.eq('restaurant_id', restaurantId)
+				.is('deleted_at', null),
+
+			supabase
+				.from('reviews')
+				.update({ deleted_at: new Date().toISOString() })
+				.eq('restaurant_id', restaurantId)
+				.is('deleted_at', null),
+		]);
 	}
 
 	/**
@@ -419,6 +463,7 @@ export class RestaurantService {
 			`,
 			)
 			.eq('owner_id', ownerId)
+			.is('deleted_at', null)
 			.order('created_at', { ascending: false });
 
 		if (error) {

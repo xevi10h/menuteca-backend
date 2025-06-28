@@ -54,6 +54,7 @@ export class UserService {
 			.from('users')
 			.select('*')
 			.eq('id', userId)
+			.is('deleted_at', null)
 			.single();
 
 		if (error) {
@@ -160,6 +161,38 @@ export class UserService {
 	}
 
 	/**
+	 * Soft delete user
+	 */
+	static async softDeleteUser(userId: string): Promise<void> {
+		const { error } = await supabase
+			.from('users')
+			.update({ deleted_at: new Date().toISOString() })
+			.eq('id', userId)
+			.is('deleted_at', null); // Solo si no está ya eliminado
+
+		if (error) {
+			throw new AppError('Failed to delete user', 500);
+		}
+
+		// Soft delete related data
+		await Promise.all([
+			// Soft delete user's restaurants
+			supabase
+				.from('restaurants')
+				.update({ deleted_at: new Date().toISOString() })
+				.eq('owner_id', userId)
+				.is('deleted_at', null),
+
+			// Soft delete user's reviews
+			supabase
+				.from('reviews')
+				.update({ deleted_at: new Date().toISOString() })
+				.eq('user_id', userId)
+				.is('deleted_at', null),
+		]);
+	}
+
+	/**
 	 * Verify user password (for login)
 	 */
 	static async verifyUserPassword(
@@ -263,7 +296,8 @@ export class UserService {
 		// Get total count
 		const { count, error: countError } = await supabase
 			.from('users')
-			.select('*', { count: 'exact', head: true });
+			.select('*', { count: 'exact', head: true })
+			.is('deleted_at', null);
 
 		if (countError) {
 			throw new AppError('Failed to count users', 500);
@@ -273,6 +307,7 @@ export class UserService {
 		const { data, error } = await supabase
 			.from('users')
 			.select('*')
+			.is('deleted_at', null)
 			.range(offset, offset + limit - 1)
 			.order('created_at', { ascending: false });
 

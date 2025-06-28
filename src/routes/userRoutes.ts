@@ -8,6 +8,7 @@ import {
 	checkEmail,
 	getAllUsers,
 	searchUsers,
+	softDeleteAccount,
 } from '@/controllers/userController';
 import { authenticateToken, optionalAuth } from '@/middleware/auth';
 
@@ -23,6 +24,7 @@ router.get('/:id', optionalAuth, getUserById);
 router.get('/', authenticateToken, getProfile);
 router.put('/', authenticateToken, updateProfile);
 router.delete('/', authenticateToken, deleteAccount);
+router.delete('/soft', authenticateToken, softDeleteAccount);
 
 // Admin routes (would need admin middleware)
 router.get('/admin/all', authenticateToken, getAllUsers);

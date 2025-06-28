@@ -265,6 +265,48 @@ export const deleteRestaurant: RequestHandler = asyncHandler(
 );
 
 /**
+ * Soft delete restaurant (owner only)
+ */
+export const softDeleteRestaurant: RequestHandler = asyncHandler(
+	async (req: Request, res: Response<ApiResponse>) => {
+		const { id } = req.params;
+
+		if (!req.user) {
+			res.status(401).json({
+				success: false,
+				error: 'User not authenticated',
+			});
+			return;
+		}
+
+		// Check ownership
+		const restaurant = await RestaurantService.getRestaurantById(id);
+		if (!restaurant) {
+			res.status(404).json({
+				success: false,
+				error: 'Restaurant not found',
+			});
+			return;
+		}
+
+		if (restaurant.owner_id !== req.user.userId) {
+			res.status(403).json({
+				success: false,
+				error: 'Not authorized to delete this restaurant',
+			});
+			return;
+		}
+
+		await RestaurantService.softDeleteRestaurant(id);
+
+		res.json({
+			success: true,
+			message: 'Restaurant deleted successfully',
+		});
+	},
+);
+
+/**
  * Search restaurants
  */
 export const searchRestaurants: RequestHandler = asyncHandler(
