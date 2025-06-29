@@ -253,6 +253,8 @@ export class RestaurantService {
 					);
 				}
 
+				let rating = restaurant.rating;
+
 				return {
 					...restaurant,
 					distance,

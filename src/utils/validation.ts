@@ -88,6 +88,53 @@ export const loginSchema = z.object({
 	password: z.string().min(1, 'Password is required'),
 });
 
+// Auth schemas for password reset
+export const forgotPasswordSchema = z.object({
+	email: z.string().email('Invalid email format'),
+});
+
+export const resetPasswordSchema = z.object({
+	token: z.string().min(1, 'Reset token is required'),
+	newPassword: z
+		.string()
+		.min(8, 'Password must be at least 8 characters')
+		.regex(
+			/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+			'Password must contain at least one lowercase letter, one uppercase letter, and one number',
+		),
+});
+
+// Change password schema
+export const changePasswordSchema = z.object({
+	currentPassword: z.string().min(1, 'Current password is required'),
+	newPassword: z
+		.string()
+		.min(8, 'New password must be at least 8 characters')
+		.regex(
+			/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+			'New password must contain at least one lowercase letter, one uppercase letter, and one number',
+		),
+});
+
+export const setPasswordSchema = z.object({
+	newPassword: z
+		.string()
+		.min(8, 'Password must be at least 8 characters')
+		.regex(
+			/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+			'Password must contain at least one lowercase letter, one uppercase letter, and one number',
+		),
+});
+
+// Google auth schema
+export const googleAuthSchema = z.object({
+	google_id: z.string().min(1, 'Google ID is required'),
+	email: z.string().email('Invalid email format'),
+	name: z.string().min(1, 'Name is required'),
+	photo: z.string().url('Invalid photo URL').optional(),
+	language: languageSchema.default('es_ES'),
+});
+
 // Address schemas
 export const createAddressSchema = z.object({
 	street: translatedTextSchema,
@@ -354,37 +401,6 @@ export const createRestaurantResponseSchema = z.object({
 		.max(500, 'Response message must be at most 500 characters'),
 });
 
-// Change password schema
-export const changePasswordSchema = z.object({
-	currentPassword: z.string().min(1, 'Current password is required'),
-	newPassword: z
-		.string()
-		.min(8, 'New password must be at least 8 characters')
-		.regex(
-			/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
-			'New password must contain at least one lowercase letter, one uppercase letter, and one number',
-		),
-});
-
-export const setPasswordSchema = z.object({
-	newPassword: z
-		.string()
-		.min(8, 'Password must be at least 8 characters')
-		.regex(
-			/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
-			'Password must contain at least one lowercase letter, one uppercase letter, and one number',
-		),
-});
-
-// Google auth schema
-export const googleAuthSchema = z.object({
-	google_id: z.string().min(1, 'Google ID is required'),
-	email: z.string().email('Invalid email format'),
-	name: z.string().min(1, 'Name is required'),
-	photo: z.string().url('Invalid photo URL').optional(),
-	language: languageSchema.default('es_ES'),
-});
-
 /**
  * Validates data against a Zod schema and returns formatted errors
  */
@@ -444,6 +460,11 @@ export const validateQuery = <T>(
 export type CreateUserData = z.infer<typeof createUserSchema>;
 export type UpdateUserData = z.infer<typeof updateUserSchema>;
 export type LoginData = z.infer<typeof loginSchema>;
+export type ForgotPasswordData = z.infer<typeof forgotPasswordSchema>;
+export type ResetPasswordData = z.infer<typeof resetPasswordSchema>;
+export type ChangePasswordData = z.infer<typeof changePasswordSchema>;
+export type SetPasswordData = z.infer<typeof setPasswordSchema>;
+export type GoogleAuthData = z.infer<typeof googleAuthSchema>;
 export type CreateAddressData = z.infer<typeof createAddressSchema>;
 export type UpdateAddressData = z.infer<typeof updateAddressSchema>;
 export type CreateCuisineData = z.infer<typeof createCuisineSchema>;
@@ -456,4 +477,6 @@ export type CreateDishData = z.infer<typeof createDishSchema>;
 export type UpdateDishData = z.infer<typeof updateDishSchema>;
 export type CreateReviewData = z.infer<typeof createReviewSchema>;
 export type UpdateReviewData = z.infer<typeof updateReviewSchema>;
-export type GoogleAuthData = z.infer<typeof googleAuthSchema>;
+export type CreateRestaurantResponseData = z.infer<
+	typeof createRestaurantResponseSchema
+>;

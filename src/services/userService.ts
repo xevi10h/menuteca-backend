@@ -1,6 +1,11 @@
 import { supabase } from '@/database/client';
 import { User, CreateUserInput, UpdateUserInput } from '@/types/entities';
-import { hashPassword, verifyPassword } from '@/utils/auth';
+import {
+	hashPassword,
+	hashToken,
+	verifyPassword,
+	verifyTokenHash,
+} from '@/utils/auth';
 import { AppError } from '@/middleware/errorHandler';
 
 export class UserService {
@@ -324,5 +329,94 @@ export class UserService {
 			users: usersWithoutPassword,
 			total: count || 0,
 		};
+	}
+
+	/**
+	 * Store a password reset token for a user
+	 */
+	static async storeResetToken(userId: string, token: string): Promise<void> {
+		const hashedToken = hashToken(token);
+		const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
+
+		// First, invalidate any existing tokens for this user
+		await supabase
+			.from('password_reset_tokens')
+			.update({ is_used: true })
+			.eq('user_id', userId)
+			.eq('is_used', false);
+
+		// Insert new token
+		const { error } = await supabase.from('password_reset_tokens').insert({
+			user_id: userId,
+			token_hash: hashedToken,
+			expires_at: expiresAt.toISOString(),
+			is_used: false,
+		});
+
+		if (error) {
+			console.error('Error storing reset token:', error);
+			throw new AppError('Failed to store reset token', 500);
+		}
+	}
+
+	/**
+	 * Validate a password reset token
+	 */
+	static async validateResetToken(
+		userId: string,
+		token: string,
+	): Promise<boolean> {
+		const hashedToken = hashToken(token);
+
+		const { data, error } = await supabase
+			.from('password_reset_tokens')
+			.select('*')
+			.eq('user_id', userId)
+			.eq('is_used', false)
+			.gt('expires_at', new Date().toISOString())
+			.single();
+
+		if (error || !data) {
+			return false;
+		}
+
+		// Verify the token hash
+		return verifyTokenHash(token, data.token_hash);
+	}
+
+	/**
+	 * Invalidate a password reset token after use
+	 */
+	static async invalidateResetToken(
+		userId: string,
+		token: string,
+	): Promise<void> {
+		const hashedToken = hashToken(token);
+
+		const { error } = await supabase
+			.from('password_reset_tokens')
+			.update({ is_used: true, used_at: new Date().toISOString() })
+			.eq('user_id', userId)
+			.eq('token_hash', hashedToken)
+			.eq('is_used', false);
+
+		if (error) {
+			console.error('Error invalidating reset token:', error);
+			throw new AppError('Failed to invalidate reset token', 500);
+		}
+	}
+
+	/**
+	 * Clean up expired reset tokens (should be run periodically)
+	 */
+	static async cleanupExpiredResetTokens(): Promise<void> {
+		const { error } = await supabase
+			.from('password_reset_tokens')
+			.delete()
+			.lt('expires_at', new Date().toISOString());
+
+		if (error) {
+			console.error('Error cleaning up expired tokens:', error);
+		}
 	}
 }

@@ -1,12 +1,19 @@
 import { UserService } from '@/services/userService';
-import { generateToken } from '@/utils/auth';
+import {
+	generateResetToken,
+	generateToken,
+	verifyResetToken,
+} from '@/utils/auth';
 import {
 	validateData,
 	createUserSchema,
 	loginSchema,
+	forgotPasswordSchema,
+	resetPasswordSchema,
 } from '@/utils/validation';
 import { asyncHandler } from '@/middleware/errorHandler';
 import { AsyncControllerFunction, AuthResponse } from '@/types/controllers';
+import { EmailService } from '@/services/emailService';
 
 /**
  * Register a new user
@@ -363,6 +370,128 @@ export const setPassword: AsyncControllerFunction = asyncHandler(
 		res.json({
 			success: true,
 			message: 'Password set successfully',
+		});
+	},
+);
+
+/**
+ * Forgot password - Send reset email
+ */
+export const forgotPassword: AsyncControllerFunction = asyncHandler(
+	async (req, res) => {
+		const { isValid, data, errors } = validateData(
+			forgotPasswordSchema,
+			req.body,
+		);
+
+		if (!isValid) {
+			res.status(400).json({
+				success: false,
+				error: 'Validation error',
+				errors,
+			});
+			return;
+		}
+
+		const { email } = data!;
+
+		// Check if user exists
+		const user = await UserService.getUserByEmail(email);
+
+		if (!user) {
+			// Don't reveal if email exists or not for security
+			res.json({
+				success: true,
+				message:
+					'If an account with that email exists, a reset link has been sent.',
+			});
+			return;
+		}
+
+		// Generate reset token
+		const resetToken = generateResetToken(user.id, user.email);
+
+		// Store reset token in database (you might want to add this to UserService)
+		await UserService.storeResetToken(user.id, resetToken);
+
+		// Send reset email
+		try {
+			await EmailService.sendPasswordResetEmail(
+				user.email,
+				user.name,
+				resetToken,
+			);
+
+			res.json({
+				success: true,
+				message:
+					'If an account with that email exists, a reset link has been sent.',
+			});
+		} catch (error) {
+			console.error('Failed to send reset email:', error);
+			res.status(500).json({
+				success: false,
+				error: 'Failed to send reset email. Please try again later.',
+			});
+		}
+	},
+);
+
+/**
+ * Reset password with token
+ */
+export const resetPassword: AsyncControllerFunction = asyncHandler(
+	async (req, res) => {
+		const { isValid, data, errors } = validateData(
+			resetPasswordSchema,
+			req.body,
+		);
+
+		if (!isValid) {
+			res.status(400).json({
+				success: false,
+				error: 'Validation error',
+				errors,
+			});
+			return;
+		}
+
+		const { token, newPassword } = data!;
+
+		// Verify reset token
+		const tokenData = verifyResetToken(token);
+
+		if (!tokenData) {
+			res.status(400).json({
+				success: false,
+				error: 'Invalid or expired reset token',
+			});
+			return;
+		}
+
+		// Check if token exists in database and is not used
+		const isValidToken = await UserService.validateResetToken(
+			tokenData.userId,
+			token,
+		);
+
+		if (!isValidToken) {
+			res.status(400).json({
+				success: false,
+				error: 'Invalid or expired reset token',
+			});
+			return;
+		}
+
+		// Update password
+		await UserService.updatePassword(tokenData.userId, newPassword);
+
+		// Invalidate the reset token
+		await UserService.invalidateResetToken(tokenData.userId, token);
+
+		res.json({
+			success: true,
+			message: 'Password reset successfully',
 		});
 	},
 );
