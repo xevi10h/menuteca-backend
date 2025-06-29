@@ -12,7 +12,7 @@ interface EmailConfig {
 }
 
 class EmailServiceClass {
-	private transporter: nodemailer.Transporter;
+	private transporter!: nodemailer.Transporter;
 	private isConfigured: boolean = false;
 
 	constructor() {
@@ -31,7 +31,7 @@ class EmailServiceClass {
 				},
 			};
 
-			this.transporter = nodemailer.createTransporter(emailConfig);
+			this.transporter = nodemailer.createTransport(emailConfig);
 			this.isConfigured = !!(emailConfig.auth.user && emailConfig.auth.pass);
 
 			if (this.isConfigured) {
@@ -54,7 +54,38 @@ class EmailServiceClass {
 	}
 
 	/**
-	 * Send password reset email
+	 * Send password reset code email
+	 */
+	async sendPasswordResetCodeEmail(
+		email: string,
+		name: string,
+		resetCode: string,
+	): Promise<void> {
+		if (!this.isConfigured) {
+			throw new AppError('Email service not configured', 500);
+		}
+
+		const mailOptions = {
+			from: {
+				name: process.env.FROM_NAME || 'Menuteca',
+				address: process.env.FROM_EMAIL || process.env.SMTP_USER || '',
+			},
+			to: email,
+			subject: 'Código de verificación - Menuteca',
+			html: this.getPasswordResetCodeTemplate(name, resetCode),
+			text: this.getPasswordResetCodeTextTemplate(name, resetCode),
+		};
+
+		try {
+			await this.transporter.sendMail(mailOptions);
+		} catch (error) {
+			console.error('Failed to send password reset code email:', error);
+			throw new AppError('Failed to send password reset email', 500);
+		}
+	}
+
+	/**
+	 * Send password reset email (legacy - keep for backward compatibility)
 	 */
 	async sendPasswordResetEmail(
 		email: string,
@@ -76,8 +107,8 @@ class EmailServiceClass {
 			},
 			to: email,
 			subject: 'Restablecer tu contraseña - Menuteca',
-			html: this.getPasswordResetTemplate(name, resetUrl),
-			text: this.getPasswordResetTextTemplate(name, resetUrl),
+			html: this.getPasswordResetCodeTemplate(name, resetUrl),
+			text: this.getPasswordResetCodeTextTemplate(name, resetUrl),
 		};
 
 		try {
@@ -117,29 +148,38 @@ class EmailServiceClass {
 	}
 
 	/**
-	 * Password reset email HTML template
+	 * Password reset code email HTML template
 	 */
-	private getPasswordResetTemplate(name: string, resetUrl: string): string {
+	private getPasswordResetCodeTemplate(
+		name: string,
+		resetCode: string,
+	): string {
 		return `
 			<!DOCTYPE html>
 			<html>
 			<head>
 				<meta charset="utf-8">
 				<meta name="viewport" content="width=device-width, initial-scale=1.0">
-				<title>Restablecer contraseña</title>
+				<title>Código de verificación</title>
 				<style>
-					body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+					body { font-family: 'Manrope', Arial, sans-serif; line-height: 1.6; color: #2D5016; }
 					.container { max-width: 600px; margin: 0 auto; padding: 20px; }
 					.header { text-align: center; margin-bottom: 30px; }
 					.logo { font-size: 32px; font-weight: bold; color: #2D5016; }
-					.button { 
-						display: inline-block; 
-						padding: 12px 24px; 
-						background-color: #2D5016; 
-						color: white; 
-						text-decoration: none; 
-						border-radius: 8px; 
-						margin: 20px 0;
+					.code-container { 
+						background-color: #F5F7F0; 
+						border: 2px solid #2D5016; 
+						border-radius: 12px; 
+						padding: 20px; 
+						text-align: center; 
+						margin: 30px 0;
+					}
+					.code { 
+						font-size: 36px; 
+						font-weight: bold; 
+						color: #2D5016; 
+						letter-spacing: 8px;
+						font-family: 'Courier New', monospace;
 					}
 					.footer { margin-top: 30px; font-size: 12px; color: #666; }
 				</style>
@@ -150,27 +190,26 @@ class EmailServiceClass {
 						<div class="logo">Menuteca</div>
 					</div>
 					
-					<h2>Restablecer tu contraseña</h2>
+					<h2>Código de verificación</h2>
 					
 					<p>Hola ${name},</p>
 					
 					<p>Hemos recibido una solicitud para restablecer la contraseña de tu cuenta en Menuteca.</p>
 					
-					<p>Haz clic en el siguiente enlace para restablecer tu contraseña:</p>
+					<p>Utiliza el siguiente código de verificación para continuar:</p>
 					
-					<div style="text-align: center;">
-						<a href="${resetUrl}" class="button">Restablecer Contraseña</a>
+					<div class="code-container">
+						<div class="code">${resetCode}</div>
 					</div>
 					
-					<p>Este enlace expirará en 1 hora por razones de seguridad.</p>
+					<p>Este código expirará en 15 minutos por razones de seguridad.</p>
 					
 					<p>Si no solicitaste este cambio, puedes ignorar este email de forma segura.</p>
 					
 					<p>Saludos,<br>El equipo de Menuteca</p>
 					
 					<div class="footer">
-						<p>Si tienes problemas haciendo clic en el botón, copia y pega la siguiente URL en tu navegador:</p>
-						<p>${resetUrl}</p>
+						<p>Este código es confidencial. No lo compartas con nadie.</p>
 					</div>
 				</div>
 			</body>
@@ -179,20 +218,22 @@ class EmailServiceClass {
 	}
 
 	/**
-	 * Password reset email text template
+	 * Password reset code email text template
 	 */
-	private getPasswordResetTextTemplate(name: string, resetUrl: string): string {
+	private getPasswordResetCodeTextTemplate(
+		name: string,
+		resetCode: string,
+	): string {
 		return `
-			Restablecer tu contraseña - Menuteca
+			Código de verificación - Menuteca
 
 			Hola ${name},
 
 			Hemos recibido una solicitud para restablecer la contraseña de tu cuenta en Menuteca.
 
-			Para restablecer tu contraseña, visita el siguiente enlace:
-			${resetUrl}
+			Tu código de verificación es: ${resetCode}
 
-			Este enlace expirará en 1 hora por razones de seguridad.
+			Este código expirará en 15 minutos por razones de seguridad.
 
 			Si no solicitaste este cambio, puedes ignorar este email de forma segura.
 
@@ -213,7 +254,7 @@ class EmailServiceClass {
 				<meta name="viewport" content="width=device-width, initial-scale=1.0">
 				<title>¡Bienvenido a Menuteca!</title>
 				<style>
-					body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+					body { font-family: 'Manrope', Arial, sans-serif; line-height: 1.6; color: #2D5016; }
 					.container { max-width: 600px; margin: 0 auto; padding: 20px; }
 					.header { text-align: center; margin-bottom: 30px; }
 					.logo { font-size: 32px; font-weight: bold; color: #2D5016; }

@@ -7,8 +7,9 @@ import {
 	refreshToken,
 	changePassword,
 	setPassword,
-	forgotPassword,
-	resetPassword,
+	sendPasswordResetCode,
+	verifyPasswordResetCode,
+	resetPasswordWithToken,
 } from '@/controllers/authController';
 import { authenticateToken } from '@/middleware/auth';
 import { authRateLimit } from '@/middleware/rateLimit';
@@ -19,8 +20,11 @@ const router: IRouter = Router();
 router.post('/register', authRateLimit, register);
 router.post('/login', authRateLimit, login);
 router.post('/google', authRateLimit, googleAuth);
-router.post('/forgot-password', authRateLimit, forgotPassword);
-router.post('/reset-password', authRateLimit, resetPassword);
+
+// Password reset flow
+router.post('/send-reset-code', authRateLimit, sendPasswordResetCode);
+router.post('/verify-reset-code', authRateLimit, verifyPasswordResetCode);
+router.post('/reset-password', authRateLimit, resetPasswordWithToken);
 
 // Protected routes
 router.get('/profile', authenticateToken, getProfile);

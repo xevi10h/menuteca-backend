@@ -88,11 +88,6 @@ export const loginSchema = z.object({
 	password: z.string().min(1, 'Password is required'),
 });
 
-// Auth schemas for password reset
-export const forgotPasswordSchema = z.object({
-	email: z.string().email('Invalid email format'),
-});
-
 export const resetPasswordSchema = z.object({
 	token: z.string().min(1, 'Reset token is required'),
 	newPassword: z
@@ -456,11 +451,30 @@ export const validateQuery = <T>(
 	}
 };
 
+export const sendResetCodeSchema = z.object({
+	email: z.string().email('Invalid email format'),
+});
+
+export const verifyResetCodeSchema = z.object({
+	email: z.string().email('Invalid email format'),
+	code: z.string().regex(/^\d{6}$/, 'Code must be exactly 6 digits'),
+});
+
+export const resetPasswordWithCodeSchema = z.object({
+	token: z.string().min(1, 'Reset token is required'),
+	newPassword: z
+		.string()
+		.min(8, 'Password must be at least 8 characters')
+		.regex(
+			/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+			'Password must contain at least one lowercase letter, one uppercase letter, and one number',
+		),
+});
+
 // Type inference helpers
 export type CreateUserData = z.infer<typeof createUserSchema>;
 export type UpdateUserData = z.infer<typeof updateUserSchema>;
 export type LoginData = z.infer<typeof loginSchema>;
-export type ForgotPasswordData = z.infer<typeof forgotPasswordSchema>;
 export type ResetPasswordData = z.infer<typeof resetPasswordSchema>;
 export type ChangePasswordData = z.infer<typeof changePasswordSchema>;
 export type SetPasswordData = z.infer<typeof setPasswordSchema>;
@@ -479,4 +493,9 @@ export type CreateReviewData = z.infer<typeof createReviewSchema>;
 export type UpdateReviewData = z.infer<typeof updateReviewSchema>;
 export type CreateRestaurantResponseData = z.infer<
 	typeof createRestaurantResponseSchema
+>;
+export type SendResetCodeData = z.infer<typeof sendResetCodeSchema>;
+export type VerifyResetCodeData = z.infer<typeof verifyResetCodeSchema>;
+export type ResetPasswordWithCodeData = z.infer<
+	typeof resetPasswordWithCodeSchema
 >;
