@@ -24,12 +24,22 @@ class EmailServiceClass {
 			const emailConfig: EmailConfig = {
 				host: process.env.SMTP_HOST || 'smtp.gmail.com',
 				port: parseInt(process.env.SMTP_PORT || '587'),
-				secure: process.env.SMTP_SECURE === 'true', // true for 465, false for other ports
+				secure: process.env.SMTP_SECURE === 'true',
 				auth: {
 					user: process.env.SMTP_USER || '',
 					pass: process.env.SMTP_PASS || '',
 				},
 			};
+
+			// Si no hay credenciales SMTP en desarrollo, usar modo mock
+			if (
+				process.env.NODE_ENV === 'development' &&
+				(!emailConfig.auth.user || !emailConfig.auth.pass)
+			) {
+				console.log('📧 Email service running in MOCK mode for development');
+				this.isConfigured = true; // Marcar como configurado para desarrollo
+				return;
+			}
 
 			this.transporter = nodemailer.createTransport(emailConfig);
 			this.isConfigured = !!(emailConfig.auth.user && emailConfig.auth.pass);
@@ -41,11 +51,13 @@ class EmailServiceClass {
 						console.error('Email configuration error:', error);
 						this.isConfigured = false;
 					} else {
-						console.log('Email server is ready to take our messages');
+						console.log('✅ Email server is ready to take our messages');
 					}
 				});
 			} else {
-				console.warn('Email service not configured - missing SMTP credentials');
+				console.warn(
+					'⚠️ Email service not configured - missing SMTP credentials',
+				);
 			}
 		} catch (error) {
 			console.error('Failed to setup email transporter:', error);
